@@ -1,41 +1,38 @@
 'use strict';
-const get = id => document.getElementById(id);
-const records = [
-  ['R-1042','회의실 모니터','화면이 간헐적으로 꺼집니다.','대기'],
-  ['R-1041','라벨 프린터','급지 시 용지가 걸립니다.','점검 중'],
-  ['R-1040','무선 스캐너','충전 단자 교체를 마쳤습니다.','완료']
-].map(([id,name,issue,state])=>({id,name,issue,state,note:'',draft:'',pending:state,history:['접수 등록 · '+state]}));
-let selected = records[0];
-const visible = r => (get('filter').value==='전체'||get('filter').value===r.state) &&
-  (r.id+' '+r.name).toLowerCase().includes(get('search').value.trim().toLowerCase());
-function list(){
-  const rows=get('rows'); rows.replaceChildren();
-  for(const r of records.filter(visible)){
-    const b=document.createElement('button'); b.className='row'; b.type='button'; b.dataset.id=r.id;
-    b.setAttribute('aria-pressed',String(r===selected));
-    const title=document.createElement('strong'),meta=document.createElement('span');
-    title.textContent=r.name; meta.textContent=r.id+' · '+r.state;
-    b.append(title,meta); b.onclick=()=>{selected=r;document.body.classList.add('detail');render();get('feedback').textContent='';get('name').focus()};rows.append(b);
-  }
-  if(!rows.children.length) rows.textContent='일치하는 접수가 없습니다. 검색어나 상태를 변경하세요.';
-}
-function render(){
-  list();for(const key of ['work','audit'])get(key).hidden=!selected;
-  if(!selected)return;
-  get('ref').textContent='REPAIR / '+selected.id;get('name').textContent=selected.name;
-  get('symptom').textContent=selected.issue;get('state').value=selected.pending;get('note').value=selected.draft;get('note').setCustomValidity('');
-  get('history').replaceChildren(...selected.history.map(s=>{const li=document.createElement('li');li.textContent=s;return li}));
-}
-function refilter(){if(!selected||!visible(selected))selected=records.find(visible);if(!selected)document.body.classList.remove('detail');render()}
-get('filter').onchange=refilter;get('search').oninput=refilter;
-get('note').oninput=e=>{selected.draft=e.target.value;e.target.setCustomValidity('')};
-get('state').onchange=e=>selected.pending=e.target.value;
-get('template').onclick=()=>{const n=get('note');n.setRangeText('증상: '+selected.issue+'\n점검 결과: \n다음 조치: ',n.selectionStart,n.selectionEnd,'end');selected.draft=n.value;n.setCustomValidity('');n.focus()};
-document.querySelector('form').onsubmit=e=>{e.preventDefault();if(!selected.draft.trim()){get('note').setCustomValidity('점검 기록을 입력하세요.');get('note').reportValidity();return}
-  selected.note=selected.draft.trim();selected.state=selected.pending;
-  selected.history.unshift(selected.state+' · '+selected.note);
-  get('feedback').textContent=selected.id+' 점검 기록을 저장했습니다. 처리 상태: '+selected.state;
-  if(!visible(selected)){document.body.classList.remove('detail');refilter()}else render();
-};
-get('back').onclick=()=>{document.body.classList.remove('detail');(document.querySelector('.row[aria-pressed=true]')||get('search')).focus()};
-render();
+const $=id=>document.getElementById(id),el=(tag,txt,cls)=>{const n=document.createElement(tag);if(txt!=null)n.textContent=txt;if(cls)n.className=cls;return n},btn=(txt,fn,cls)=>{const b=el('button',txt,cls);b.type='button';b.onclick=fn;return b};
+const demoDate='2026.11.01',sets={'초진 기본 세트':['초진 문진','기본 계측'],'재진 확인 세트':['경과 확인','생활 안내'],'검사 접수 세트':['검사 접수','결과 확인'],'상담 기록 세트':['상담 기록']};
+const make=(id,name,age,room,status)=>({id,name,age,room,status,draft:'주호소\n내원 사유를 확인함.\n\n경과 및 소견\n이전 기록과 비교하여 변화 여부를 확인함.\n\n계획\n다음 방문 시 경과 확인.',orders:['외래 진찰'],memos:['다음 내원 시 예약 시간 확인 요청.'],visits:[['2026.10.24','재진 · 서하늘','지난 방문 경과 확인.\n생활 중 불편한 점을 기록함.'],['2026.10.09','초진 · 서하늘','초진 문진 작성.\n기본 계측 및 상담.']],docs:[]});
+const people=[make('D-1024','김가온','32세','진료실 01','진료중'),make('D-1025','윤이든','45세','진료실 01','대기'),make('D-1026','박다온','28세','진료실 02','대기'),make('D-1027','이하람','51세','검사실','검사중'),make('D-1028','정나래','37세','수납실','수납대기')];
+const appointments=[{time:'09:30',name:'김가온',room:'진료실 01'},{time:'10:00',name:'박다온',room:'진료실 02'}];let pat=people[0],mode='차트',filter='전체',report='통계',template='초진 문진',timer;
+people[0].memos=['접수팀 · 09:12｜예약 시간 확인 후 진료실 01로 안내함.','진료지원 · 09:08｜이전 방문 기록 확인 요청.','접수팀 · 08:55｜재진 접수 완료.'];people[0].orders=['외래 진찰','기본 계측','경과 확인'];people[0].visits.push(['2026.09.28','초진 · 서하늘','첫 방문. 문진표를 확인하고 내원 이력에 등록함.']);
+const paths={차트:'M3 3h12v12H3z M6 7h6 M6 10h5',예약:'M2 5h14v11H2z M5 2v5 M13 2v5 M2 9h14',통계:'M2 15h14 M4 13V8 M9 13V3 M14 13V6',청구:'M4 2h10v14l-2-1-2 1-2-1-2 1-2-1z M6 6h6 M6 9h6',라이브러리:'M2 4h5l2 2h7v9H2z',문서발급:'M4 2h7l3 3v11H4z M6 8h6 M6 11h6',수납:'M2 4h14v10H2z M2 8h14'};
+function notify(s){$('toast').textContent=s;clearTimeout(timer);timer=setTimeout(()=>$('toast').textContent='',2600)}
+function modal(title,...nodes){$('modalTitle').textContent=title;$('modalBody').replaceChildren(...nodes);if(!$('modal').open)$('modal').showModal()}
+$('close').onclick=()=>$('modal').close();
+function field(title,input){const l=el('label',title);l.append(input);return l}
+function formDialog(title,fields,action,fn){const f=el('form');f.append(...fields);const b=el('button',action,'primary');f.append(b);f.onsubmit=e=>{e.preventDefault();if(fn()!==false)$('modal').close()};modal(title,f)}
+function input(ph=''){const i=el('input');i.required=true;i.placeholder=ph;return i}
+function table(headers,rows){const t=el('table'),head=t.createTHead().insertRow();headers.forEach(x=>head.append(el('th',x)));const body=t.createTBody();rows.forEach(row=>{const tr=body.insertRow();row.forEach(x=>{const cell=tr.insertCell();if(x instanceof Node)cell.append(x);else cell.textContent=x})});return t}
+function nav(){const n=$('nav');n.replaceChildren();for(const [label,path] of Object.entries(paths)){const b=btn('',()=>{mode=label;paint()});b.innerHTML='<svg viewBox="0 0 18 18" aria-hidden="true"><path d="'+path+'"/></svg>';b.append(label);b.setAttribute('aria-pressed',mode===label);n.append(b)}$('location').textContent=mode}
+function queue(){const f=$('filters');f.replaceChildren();for(const x of ['전체','대기','수납대기']){const b=btn(x,()=>{filter=x;queue()});b.setAttribute('aria-pressed',filter===x);f.append(b)}
+const match=people.filter(r=>(filter==='전체'||r.status===filter)&&(r.name+r.id).toLowerCase().includes($('search').value.trim().toLowerCase()));const q=$('patients');q.replaceChildren();for(const room of new Set(match.map(r=>r.room))){const group=el('div',null,'group');const members=match.filter(r=>r.room===room);group.append(el('h3',room+'　'+members.length));for(const r of members){const b=btn('',()=>{pat=r;mode='차트';paint()},'row');b.setAttribute('aria-pressed',r===pat);b.append(el('span',r.status,'tag'),el('strong',r.name),el('small',r.id+' · '+r.age));group.append(b)}q.append(group)}if(!match.length)q.append(el('p','조건에 맞는 환자가 없습니다.','sub'))}
+function chart(){const r=pat;$('identity').replaceChildren(el('span',r.id),el('b',r.name),el('span',r.age),el('span','건강보험','insurance'),el('span',r.room),el('span',r.status,'tag'));$('visitsList').replaceChildren(...r.visits.map(([date,who,txt],i)=>{const d=el('details');d.open=i===0;d.append(el('summary',date),el('small',who),el('p',txt));return d}));$('note').value=r.draft;$('room').textContent=r.room;$('send').disabled=['수납대기','수납완료'].includes(r.status);$('send').textContent=$('send').disabled?r.status:'수납 대기 보내기';$('mediaInfo').textContent=r.imageName||'첨부된 이미지 없음';$('look').hidden=!r.image;
+$('ordered').replaceChildren(...r.orders.map(x=>el('div',x,'item')));$('memoList').replaceChildren(...r.memos.map(s=>{const d=el('div',null,'memo');const parts=s.split('｜');d.append(el('small',parts.length>1?parts[0]:'접수팀 · 공유'),el('p',parts.at(-1)));return d}));$('memo').value=r.memoDraft||'';setList()}
+function setList(){const n=$('setList');n.replaceChildren();for(const [key,val] of Object.entries(sets).filter(([k])=>k.includes($('setQuery').value.trim())))n.append(btn('▸ '+key,()=>modal(key,el('p',val.join(' · ')),btn('현재 차트에 적용',()=>{pat.orders=[...new Set([...pat.orders,...val])];$('modal').close();chart();notify('오더세트를 적용했습니다.')},'primary'))));if(!n.children.length)n.append(el('p','일치하는 세트 없음','sub'))}
+$('setQuery').oninput=setList;$('search').oninput=queue;$('note').oninput=e=>pat.draft=e.target.value;$('memo').oninput=e=>pat.memoDraft=e.target.value;
+$('memoForm').onsubmit=e=>{e.preventDefault();if(!$('memo').value.trim())return;pat.memos.unshift($('memo').value.trim());pat.memoDraft='';chart();notify('공유 메모를 등록했습니다.')};
+function save(){if(!pat.draft.trim()){notify('진료기록을 입력하세요.');$('note').focus();return false}const v=[demoDate,'오늘 · 서하늘',pat.draft];if(pat.visits[0]?.[0]===demoDate)pat.visits[0]=v;else pat.visits.unshift(v);return true}
+$('save').onclick=()=>{if(save()){chart();notify('오늘 진료기록을 저장했습니다.')}};
+$('send').onclick=()=>{if(!save())return;pat.room='수납실';pat.status='수납대기';paint();notify(pat.name+' · 수납 대기로 이동했습니다.')};
+$('photo').onchange=e=>{const f=e.target.files[0];if(!f)return;if(!f.type.startsWith('image/')){notify('이미지 파일을 선택하세요.');return}if(pat.image)URL.revokeObjectURL(pat.image);pat.image=URL.createObjectURL(f);pat.imageName=f.name;e.target.value='';chart()};
+$('look').onclick=()=>{const im=el('img');im.alt='선택한 가상 진료 첨부';im.src=pat.image;modal('첨부 이미지',im)};
+$('orderSearch').onclick=()=>{const i=input('오더명 검색');i.setAttribute('aria-label','오더명 검색');const list=el('div');function show(){list.replaceChildren();for(const name of ['외래 진찰',...new Set(Object.values(sets).flat())].filter(x=>x.includes(i.value)))list.append(btn(name,()=>{if(!pat.orders.includes(name))pat.orders.push(name);$('modal').close();chart();notify(name+' · 차트 반영')},'option'));if(!list.children.length)list.textContent='검색 결과 없음'}i.oninput=show;show();modal('진단 및 처방 검색',i,list);i.focus()};
+$('register').onclick=()=>{const name=input('가상 환자 이름'),room=el('select');['진료실 01','진료실 02'].forEach(x=>room.append(el('option',x)));formDialog('신규 환자 접수',[field('이름',name),field('배정 진료실',room)],'접수 등록',()=>{if(!name.value.trim())return false;pat=make('D-'+(1024+people.length),name.value.trim(),'신환',room.value,'대기');pat.draft='';pat.visits=[];pat.memos=[];pat.orders=[];people.push(pat);mode='차트';filter='전체';$('search').value='';paint();notify('신규 접수를 등록했습니다.')})};
+function panel(title,sub){const n=$('other');n.replaceChildren(el('h2',title),el('p',sub,'sub'));return n}
+function other(){if(mode==='예약'){const n=panel('예약 일정','2026년 11월 1일 · 일간 일정');const bar=el('div',null,'toolbar');bar.append(btn('＋ 예약 추가',()=>{const time=input();time.type='time';const name=input('가상 환자 이름'),room=el('select');['진료실 01','진료실 02'].forEach(x=>room.append(el('option',x)));formDialog('예약 등록',[field('시간',time),field('예약자',name),field('진료실',room)],'예약 저장',()=>{if(!name.value.trim())return false;if(appointments.some(a=>a.time===time.value&&a.room===room.value)){notify('이미 예약된 시간입니다.');return false}appointments.push({time:time.value,name:name.value.trim(),room:room.value});other()})}));n.append(bar,table(['시간','진료실 01','진료실 02'],[...new Set(['09:00','09:30','10:00','10:30','11:00',...appointments.map(a=>a.time)])].sort().map(s=>[s,...['진료실 01','진료실 02'].map(room=>appointments.find(a=>a.time===s&&a.room===room)?.name||'—')])));return}
+if(mode==='통계'){const n=panel('운영 통계','오늘 · 가상 환자 목록 기준');const bar=el('div',null,'toolbar');for(const x of ['통계','인사이트']){const b=btn(x,()=>{report=x;other()});b.setAttribute('aria-pressed',report===x);bar.append(b)}n.append(bar);const values=[...new Set(people.map(r=>r.room))].map(room=>[room,people.filter(r=>r.room===room).length]);if(report==='통계')n.append(table(['진료 구역','환자 수'],values));else{const d=el('div',null,'report');d.append(el('h3','진료 구역별 환자 분포'));for(const [room,v] of values){const row=el('div',null,'bar'),track=el('i');track.style.width=100*v/Math.max(...values.map(x=>x[1]))+'%';row.append(el('span',room),track,el('b',v+'명'));d.append(row)}n.append(d)}return}
+if(mode==='라이브러리'){const n=panel('라이브러리','서식 선택 → 내용 미리보기 → 현재 차트에 삽입');const bar=el('div',null,'toolbar');for(const x of ['초진 문진','경과 확인'])bar.append(btn(x,()=>{template=x;other()}));const content=template==='초진 문진'?'주호소:\n발생 시점:\n관련 이력:':'변화 사항:\n확인 내용:\n다음 계획:';n.append(bar,el('div',template+'\n\n'+content,'paper'),btn(pat.name+' 차트에 삽입',()=>{pat.draft+='\n\n'+content;mode='차트';paint();$('note').focus()},'primary'));return}
+if(mode==='문서발급'){const n=panel('문서 발급',pat.name+' · '+pat.id+'의 발급 이력');n.append(btn('진료확인서 작성',()=>{const reason=input('예: 제출용');formDialog('진료확인서 미리보기',[el('div',pat.name+' · '+pat.id+'\n내원일 '+demoDate,'paper'),field('발급 용도',reason)],'데모 문서 발급',()=>{if(!reason.value.trim())return false;pat.docs.push(['진료확인서',reason.value.trim(),demoDate]);other()})}),table(['서식명','용도','발급일'],pat.docs));if(!pat.docs.length)n.append(el('p','발급한 문서가 없습니다.','sub'));return}
+if(mode==='수납'||mode==='청구'){const billing=mode==='청구',n=panel(billing?'청구 내역':'수납 대기',billing?'수납이 끝난 건을 확인하고 검토 상태를 기록합니다.':'차트에서 수납 대기로 보낸 환자가 표시됩니다.');const rs=people.filter(r=>r.status===(billing?'수납완료':'수납대기'));n.append(table(['차트번호','환자','상태','처리'],rs.map(r=>[r.id,r.name,billing?(r.checked?'검토 완료':'검토 대기'):r.status,billing&&r.checked?'완료':btn(billing?'검토 완료':'수납 완료',()=>{if(billing)r.checked=true;else r.status='수납완료';paint();notify('데모 상태를 반영했습니다.')})])));if(!rs.length)n.append(el('p','처리할 내역이 없습니다.','sub'))}}
+function paint(){nav();queue();chart();const isChart=mode==='차트';$('chart').hidden=!isChart;$('other').hidden=isChart;$('identity').hidden=!['차트','문서발급','라이브러리'].includes(mode);if(!isChart)other()}
+paint();
