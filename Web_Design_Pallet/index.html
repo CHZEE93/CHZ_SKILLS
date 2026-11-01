@@ -1,10 +1,100 @@
-<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>팔레트 · 외래 진료 워크스페이스</title><link rel="stylesheet" href="preview.css"><script src="preview.js" defer></script></head><body>
-<header><div class="clinic"><b>P</b> 다온의원</div><strong id="location">차트</strong><input id="search" type="search" aria-label="환자 검색" placeholder="⌕　환자명 · 차트번호 검색"><button id="register">＋ 신규 접수</button><small>교육용 데모</small><i>서</i></header>
-<div class="shell"><nav aria-label="업무 메뉴"><div class="caption">워크스페이스</div><div id="nav"></div><footer>PALLET<br>DESIGN STUDY</footer></nav>
-<aside id="queue"><h2>환자리스트</h2><div id="filters" class="tabs"></div><div id="patients"></div></aside>
-<main><div id="identity"></div><div id="chart"><section id="visits"><h2>내원이력</h2><div id="visitsList"></div></section>
-<section id="center"><div class="date">오늘 진료 <strong>2026.11.01</strong>　·　서하늘 원장</div><div class="box"><h2>진료기록</h2><div class="notegrid"><label class="sr" for="note">현재 진료기록</label><textarea id="note"></textarea><div class="media"><strong>이미지</strong><p id="mediaInfo">첨부된 이미지 없음</p><label class="upload">사진 첨부<input type="file" id="photo" accept="image/*"></label><button id="look" hidden>크게 보기</button></div></div></div>
-<div class="box orders"><h2>진단 및 처방</h2><button id="orderSearch" class="searchLike">⌕　오더 검색</button><div id="ordered"></div></div><div class="action"><span id="room"></span><button id="save">임시 저장</button><button class="primary" id="send">수납 대기 보내기</button></div></section>
-<section id="sets"><h2>오더세트</h2><input id="setQuery" aria-label="오더세트 검색" placeholder="세트 검색"><div id="setList"></div></section>
-<aside id="memos"><h2>환자기록</h2><div id="memoList"></div><form id="memoForm"><label for="memo">직원 공유 메모</label><textarea id="memo" rows="3" required></textarea><button>메모 등록</button></form></aside></div><div id="other" hidden></div></main></div>
-<div role="status" id="toast"></div><dialog id="modal"><div class="dialogTop"><h2 id="modalTitle"></h2><button id="close" aria-label="닫기">×</button></div><div id="modalBody"></div></dialog></body></html>
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pallet Workspace</title>
+<link rel="stylesheet" href="assets/pallet.css">
+<style>
+  .v-chart { display: grid; grid-template-columns: var(--p-list-w) 1fr; gap: 0; height: 100%; min-height: 0; }
+  .v-chart .p-list { border-radius: var(--p-r-card) 0 0 var(--p-r-card); }
+  .work { background: var(--p-surface); border-radius: 0 var(--p-r-card) var(--p-r-card) 0; display: grid; grid-template-rows: auto 1fr; min-width: 0; min-height: 0; border-left: 8px solid var(--p-gutter); }
+  .work-cols { display: grid; grid-template-columns: 240px minmax(440px, 1fr) 230px 210px; min-height: 0; }
+  .visit { border: 1px solid var(--p-line); border-radius: var(--p-r-ctl); padding: 10px; display: grid; gap: 6px; }
+  .visit .d { color: var(--p-link); font-weight: 600; }
+  .visit .d.old { color: var(--p-text-2); font-weight: 500; }
+  .visit .chips { display: flex; gap: 4px; flex-wrap: wrap; }
+  .visit p { margin: 0; font-size: 12px; color: var(--p-text-2); }
+  textarea.note { width: 100%; min-height: 96px; border: 0; resize: vertical; padding: 0; outline: none; }
+  .set-row { display: flex; justify-content: space-between; align-items: center; height: 32px; padding: 0 6px; border-radius: var(--p-r-ctl); border: 0; background: none; width: 100%; text-align: left; }
+  .set-row:hover { background: var(--p-surface-box); }
+  .set-row[aria-selected="true"] { background: var(--p-tint); color: var(--p-primary-strong); font-weight: 600; }
+  .msg { display: grid; gap: 2px; font-size: 12px; }
+  .msg .who { display: flex; align-items: center; gap: 6px; }
+  .msg .who b { font-size: 12px; }
+  .msg .who time { color: var(--p-text-3); font-size: 11px; }
+  .notice { background: var(--p-surface); border: 1px solid var(--p-line); border-radius: var(--p-r-ctl); padding: 6px 8px; font-size: 12px; }
+  .collab { background: var(--p-surface-sub); }
+  .dash { display: grid; justify-items: center; align-content: start; gap: 12px; padding: 24px 12px; }
+  .dash .hero { width: min(640px, 100%); padding: 20px; border-radius: 12px; display: grid; gap: 10px; }
+  .dash .duo { width: min(640px, 100%); display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .dash .duo > div { padding: 16px; border-radius: 12px; display: grid; gap: 8px; }
+
+  .v-res { display: grid; grid-template-columns: minmax(300px, 27%) 1fr; gap: 8px; height: 100%; min-height: 0; }
+  .mini { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; padding: 0 12px 12px; text-align: center; font-size: 12px; }
+  .mini .dow { color: var(--p-text-2); font-size: 11px; height: 24px; display: grid; place-items: center; }
+  .mini button { border: 0; background: none; border-radius: 999px; height: 40px; display: grid; place-items: center; line-height: 1.1; padding: 2px 0; }
+  .mini button small { font-size: 10px; color: var(--p-text-3); }
+  .mini button.sun { color: var(--p-holiday); }
+  .mini button[aria-pressed="true"] { background: var(--p-primary); color: #fff; }
+  .mini button[aria-pressed="true"] small { color: #fff; }
+  .grid { display: grid; grid-template-columns: 64px 180px 180px 1fr; align-items: start; }
+  .grid .hdr { font-size: 12px; font-weight: 700; height: 32px; display: flex; align-items: center; border-bottom: 1px solid var(--p-line); }
+  .grid .time { font-size: 11px; color: var(--p-text-2); padding-top: 2px; border-top: 1px solid var(--p-line); height: 104px; }
+  .grid .lane { display: grid; gap: 4px; padding: 4px 8px 4px 0; }
+
+  .v-claim { display: grid; grid-template-columns: minmax(280px, 1fr) 2fr; background: var(--p-surface); border-radius: var(--p-r-card); max-width: 1320px; height: 100%; min-height: 0; }
+  .v-claim > section { min-height: 0; display: flex; flex-direction: column; }
+  .v-claim > section + section { border-left: 1px solid var(--p-line); }
+  .batch { margin: 0 14px; padding: 14px 16px; border: 1px solid var(--p-line); border-radius: var(--p-r-card); display: grid; gap: 6px; text-align: left; background: var(--p-surface); width: calc(100% - 28px); }
+  .batch[aria-pressed="true"] { border-color: var(--p-primary); }
+  .batch b { font-size: 15px; }
+  .kpi4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 0 14px; }
+  .kpi4 div { display: grid; gap: 2px; }
+  .tabs { display: flex; gap: 16px; padding: 0 14px; border-bottom: 1px solid var(--p-line); margin-top: 12px; }
+  .tabs button { border: 0; background: none; height: 36px; padding: 0; font-weight: 600; color: var(--p-text-2); border-bottom: 2px solid transparent; }
+  .tabs button[aria-selected="true"] { color: var(--p-primary-strong); border-bottom-color: var(--p-primary); }
+
+  .v-stat { display: grid; grid-template-columns: 560px minmax(420px, 640px); gap: 0; align-items: start; }
+  .v-stat > .p-card:first-child { border-radius: var(--p-r-card) 0 0 var(--p-r-card); }
+  .v-stat > .p-card + .p-card { border-radius: 0 var(--p-r-card) var(--p-r-card) 0; border-left: 0; }
+  .filters { display: flex; gap: 8px; padding: 0 14px 12px; align-items: center; flex-wrap: wrap; }
+  .sumcard { margin: 0 14px 10px; padding: 12px 14px; border: 1px solid var(--p-line); border-radius: var(--p-r-card); width: calc(100% - 28px); text-align: left; background: var(--p-surface); display: grid; gap: 4px; }
+  .sumcard[aria-pressed="true"] { border-color: var(--p-primary); }
+  .sumcard b { font-size: 16px; }
+
+  @media (max-width: 1500px) { .work-cols { grid-template-columns: 220px minmax(440px, 1fr) 220px; } .work-cols > .collab { display: none; } }
+  @media (max-width: 1100px) { .work-cols { grid-template-columns: minmax(0, 1fr); } .work-cols > .p-col:not(.main) { display: none; } .v-res, .v-claim, .v-stat { grid-template-columns: 1fr; } .v-claim { height: auto; } }
+  @media (max-width: 720px) { .v-chart { grid-template-columns: 1fr; } .v-chart .p-list { max-height: 40vh; border-radius: var(--p-r-card); } .work { border-left: 0; border-top: 8px solid var(--p-gutter); border-radius: var(--p-r-card); } .dash .duo { grid-template-columns: 1fr; } .p-body { padding: 8px; } }
+</style>
+</head>
+<body>
+<div class="p-app">
+  <nav class="p-nav" aria-label="주 메뉴">
+    <div class="p-org"><i></i><span>가상 다온의원</span></div>
+    <a href="#chart" data-view="chart" aria-current="page"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg><span>차트</span></a>
+    <a href="#res" data-view="res"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M9 3v4M15 3v4"/></svg><span>예약</span></a>
+    <a href="#stat" data-view="stat"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 4v8h8"/></svg><span>통계</span></a>
+    <a href="#claim" data-view="claim"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M9 12l2 2 4-4"/></svg><span>청구</span></a>
+    <div class="p-nav-foot">Pallet 예제 · 가상 데이터</div>
+  </nav>
+
+  <div class="p-main">
+    <header class="p-top">
+      <h1 id="title">차트</h1>
+      <input class="p-input fill" style="width:230px" placeholder="환자 검색" aria-label="환자 검색">
+      <button class="p-btn outline" type="button" id="newPt">＋ 신규환자</button>
+      <span class="p-spacer"></span>
+      <span class="p-avatar" title="로그인 사용자">은솔</span>
+    </header>
+    <main class="p-body" id="view"></main>
+  </div>
+</div>
+
+<div class="p-pop" id="pop" hidden role="menu"></div>
+<div class="p-overlay" id="overlay" hidden><div class="p-modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle"></div></div>
+<div class="p-toast" id="toast" hidden role="status"><span id="toastText"></span></div>
+
+<script src="preview.js"></script>
+</body>
+</html>
