@@ -1,0 +1,280 @@
+/* Calico UI — 삼색고양이 디자인 시스템 토큰과 시그니처 컴포넌트
+ * 접두사: 토큰 --c-*, 클래스 .c-*
+ * 라이트(흰 털) / 다크(밤 고양이) 모두 같은 토큰 이름을 쓴다.
+ * 규칙 설명: ../SKILL.md, 값 근거: ../references/tokens.md
+ */
+
+:root {
+  /* ── 흰 털 Fur : 화면의 65–80% ───────────────────────── */
+  --c-fur: #FFFFFF;            /* 페이지 바탕 */
+  --c-belly: #FAF7F2;          /* 배 털: 보조 바탕, hover */
+  --c-cream: #F4EFE8;          /* 크림 패치: 보조 면, 칩 */
+  --c-cream-strong: #EAE1D6;   /* 크림 경계, 비활성 채움 */
+
+  /* ── 검은 패치 Ink : 15–25% (글자 + 실제 면) ─────────── */
+  --c-ink: #34312E;            /* 차콜 패치 면, 강한 제목 */
+  --c-ink-soft: #514D49;       /* 차콜 패치 안 보조 면 */
+  --c-text: #202020;           /* 본문 */
+  --c-text-2: #5E5A55;         /* 설명·안내 (6.8:1) */
+  --c-text-3: #8C8780;         /* 비활성·장식 전용 (3.6:1, 본문 금지) */
+  --c-whisker: #E7E3DD;        /* 수염선: 1px 구분선 */
+  --c-whisker-strong: #D5D0C8; /* 입력 경계 */
+
+  /* ── 주황 패치 Ginger : 5–10% ────────────────────────── */
+  --c-ginger: #D9773F;         /* 패치 면·꼬리·점. 흰 바탕 글자 금지(3.2:1) */
+  --c-ginger-ink: #AE5429;     /* 주황 글자, CTA 채움 (5.1:1) */
+  --c-ginger-deep: #94441F;    /* CTA hover */
+  --c-ginger-soft: #FFF1E8;    /* 선택 배경 */
+  --c-ginger-soft-strong: #FADBC8;
+  --c-ginger-on-ink: #F2A36F;  /* 차콜 패치 위 주황 글자 (6.3:1) */
+
+  /* ── 젤리 Bean : 1% 미만, 채움 전용(글자 금지) ─────────── */
+  --c-bean: #F0B9B0;
+
+  /* ── 의미 색 (브랜드 주황을 재사용하지 않는다) ─────────── */
+  --c-danger: #B13C32;  --c-danger-soft: #FFF0EF;
+  --c-success: #2F7A55; --c-success-soft: #EEF6F1;
+  --c-warning: #9A6A0B; --c-warning-soft: #FBF4E4;
+  --c-info: #2E6390;    --c-info-soft: #EEF4FA;
+
+  /* ── 역할 별칭: 컴포넌트는 이것만 참조 ───────────────── */
+  --c-bg: var(--c-fur);
+  --c-surface: var(--c-fur);
+  --c-surface-2: var(--c-belly);
+  --c-patch-ink: var(--c-ink);
+  --c-on-patch: #FFFFFF;
+  --c-on-patch-2: #CFC8BF;
+  --c-action: var(--c-ginger-ink);
+  --c-action-hover: var(--c-ginger-deep);
+  --c-on-action: #FFFFFF;
+
+  /* ── 형태 ─────────────────────────────────────────── */
+  --c-radius-sm: 4px;
+  --c-radius: 6px;          /* 버튼·입력 */
+  --c-radius-md: 8px;       /* 카드 */
+  --c-radius-lg: 12px;      /* 다이얼로그 */
+  --c-radius-patch: 28px 6px 6px 6px;   /* 패치 전용: 한 모서리만 크게 */
+  --c-radius-patch-alt: 6px 6px 28px 6px;
+
+  /* ── 간격·글자 ────────────────────────────────────── */
+  --c-space-1: 4px; --c-space-2: 8px; --c-space-3: 12px; --c-space-4: 16px;
+  --c-space-5: 20px; --c-space-6: 24px; --c-space-8: 32px; --c-space-10: 40px;
+  --c-space-12: 48px; --c-space-16: 64px; --c-space-20: 80px;
+  --c-font: Pretendard, Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --c-fs-display: 44px; --c-fs-h1: 34px; --c-fs-h2: 26px; --c-fs-h3: 21px;
+  --c-fs-lg: 18px; --c-fs-body: 16px; --c-fs-sm: 14px; --c-fs-cap: 12px;
+  --c-container: 1200px;
+  --c-reading: 760px;
+
+  /* ── 움직임: 조용한 발걸음 ────────────────────────── */
+  --c-paw: 180ms;                         /* 기본 전환 */
+  --c-stalk: 240ms;                       /* 꼬리 이동 등 위치 변화 */
+  --c-ease: cubic-bezier(.2, .7, .2, 1);  /* 튀지 않고 사뿐히 멈춤 */
+}
+
+/* ── 밤 고양이 Night : 다크 모드 ─────────────────────── */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --c-fur: #1E1B19; --c-belly: #262220; --c-cream: #2F2A27; --c-cream-strong: #3A3430;
+    --c-ink: #F3ECE3; --c-ink-soft: #CFC8BF;
+    --c-text: #F3ECE3; --c-text-2: #A39B92; --c-text-3: #7A726A;
+    --c-whisker: #36302C; --c-whisker-strong: #4A433E;
+    --c-ginger: #E8915C; --c-ginger-ink: #E8915C; --c-ginger-deep: #F2A36F;
+    --c-ginger-soft: #3A2A20; --c-ginger-soft-strong: #4C3324; --c-ginger-on-ink: #E8915C;
+    --c-patch-ink: #0F0D0C; --c-on-patch: #F3ECE3; --c-on-patch-2: #A39B92;
+    --c-on-action: #1E1B19;
+  }
+}
+:root[data-theme="dark"], [data-theme="dark"] {
+  --c-fur: #1E1B19; --c-belly: #262220; --c-cream: #2F2A27; --c-cream-strong: #3A3430;
+  --c-ink: #F3ECE3; --c-ink-soft: #CFC8BF;
+  --c-text: #F3ECE3; --c-text-2: #A39B92; --c-text-3: #7A726A;
+  --c-whisker: #36302C; --c-whisker-strong: #4A433E;
+  --c-ginger: #E8915C; --c-ginger-ink: #E8915C; --c-ginger-deep: #F2A36F;
+  --c-ginger-soft: #3A2A20; --c-ginger-soft-strong: #4C3324; --c-ginger-on-ink: #E8915C;
+  --c-bg: var(--c-fur); --c-surface: var(--c-fur); --c-surface-2: var(--c-belly);
+  --c-patch-ink: #0F0D0C; --c-on-patch: #F3ECE3; --c-on-patch-2: #A39B92;
+  --c-action: var(--c-ginger-ink); --c-action-hover: var(--c-ginger-deep); --c-on-action: #1E1B19;
+}
+
+/* ════════════════════════════════════════════════════
+ * 1. 코트 마크 · 코트 스트립
+ * ════════════════════════════════════════════════════ */
+
+/* 로고 옆 세 줄 무늬. 순서는 고정: 주황 → 차콜 → 크림 */
+.c-coat-mark { display: inline-flex; gap: 3px; vertical-align: middle; }
+.c-coat-mark i { width: 7px; height: 20px; border-radius: 2px; background: var(--c-ginger); }
+.c-coat-mark i:nth-child(2) { background: var(--c-ink); }
+.c-coat-mark i:nth-child(3) { background: var(--c-cream-strong); }
+
+/* 고양이 등 무늬: 페이지 최상단 또는 대표 패치 위에 한 번만.
+ * 폭 비율은 일부러 불규칙(주황 18 / 크림 47 / 차콜 23 / 크림 12). 좌우 대칭 금지. */
+.c-coat-strip {
+  height: 4px;
+  background: linear-gradient(90deg,
+    var(--c-ginger) 0 18%, var(--c-cream-strong) 18% 65%,
+    var(--c-ink) 65% 88%, var(--c-cream-strong) 88% 100%);
+  /* 하드 스톱만 쓴다: 색이 번지는 그라디언트(턱시도·삼색 경계 흐림)는 금지 */
+}
+
+/* ════════════════════════════════════════════════════
+ * 2. 패치 — 삼색이의 핵심. 면으로 존재하는 차콜/주황
+ * ════════════════════════════════════════════════════ */
+
+/* 차콜 패치: 히어로 밴드, 대표 콘텐츠, 요약 지표, 푸터 */
+.c-patch {
+  position: relative;
+  background: var(--c-patch-ink);
+  color: var(--c-on-patch);
+  border-radius: var(--c-radius-patch);
+  padding: var(--c-space-10);
+}
+.c-patch p, .c-patch small { color: var(--c-on-patch-2); }
+.c-patch h1, .c-patch h2, .c-patch h3 { color: var(--c-on-patch); }
+.c-patch .c-accent { color: var(--c-ginger-on-ink); }
+.c-patch--alt { border-radius: var(--c-radius-patch-alt); }
+
+/* 크림 패치: 차콜이 무거운 화면에서 같은 구조를 부드럽게 */
+.c-patch--cream { background: var(--c-cream); color: var(--c-text); }
+.c-patch--cream p, .c-patch--cream small { color: var(--c-text-2); }
+.c-patch--cream h1, .c-patch--cream h2, .c-patch--cream h3 { color: var(--c-ink); }
+
+/* 주황 패치 태그: 차콜 패치의 모서리에 '맞닿아' 붙는다(겹침 아님, 경계 공유).
+ * 한 화면에 1개. 글자는 흰색이 아니라 차콜 — 큰 주황 면에서 흰 글자는 3.2:1로 부족. */
+.c-patch-tag {
+  position: absolute; top: 0; right: var(--c-space-8);
+  transform: translateY(-50%);
+  background: var(--c-ginger);
+  color: #1E1B19;
+  font-size: var(--c-fs-cap); font-weight: 700; letter-spacing: .02em;
+  padding: 6px 12px;
+  border-radius: 14px 4px 14px 4px;
+}
+
+/* 주황 면 패치: 대표 지표 1개, 프로모션 1개 등에만. 글자는 차콜 */
+.c-patch--ginger { background: var(--c-ginger); color: #2B2724; }
+.c-patch--ginger p, .c-patch--ginger small { color: #2B2724; }
+.c-patch--ginger h1, .c-patch--ginger h2, .c-patch--ginger h3 { color: #1E1B19; }
+
+/* ════════════════════════════════════════════════════
+ * 3. 수염선 · 꼬리 · 귀
+ * ════════════════════════════════════════════════════ */
+
+/* 수염선: 구분은 그림자 대신 1px 선 */
+.c-whisker { border: 0; border-top: 1px solid var(--c-whisker); margin: var(--c-space-8) 0; }
+
+/* 꼬리 표시: 활성 탭/내비 밑의 주황 꼬리. 끝이 둥글고, 자리 이동은 미끄러지듯 */
+.c-tabs { position: relative; display: flex; gap: var(--c-space-6); border-bottom: 1px solid var(--c-whisker); }
+.c-tabs button {
+  background: none; border: 0; padding: 12px 0; font: inherit; font-size: var(--c-fs-sm);
+  color: var(--c-text-2); cursor: pointer;
+  transition: color var(--c-paw) var(--c-ease);
+}
+.c-tabs button[aria-selected="true"] { color: var(--c-action); font-weight: 600; }
+.c-tail {
+  position: absolute; bottom: -1px; left: 0; z-index: 1; height: 2px; width: 0;
+  background: var(--c-ginger);
+  border-radius: 0 2px 2px 0;            /* 꼬리 끝만 둥글게 */
+  transition: transform var(--c-stalk) var(--c-ease), width var(--c-stalk) var(--c-ease);
+}
+
+/* 세로 내비의 꼬리: 왼쪽 2px */
+.c-nav a {
+  display: block; padding: 8px 12px; border-left: 2px solid transparent;
+  color: var(--c-text-2); font-size: var(--c-fs-sm);
+  transition: background-color var(--c-paw) var(--c-ease), color var(--c-paw) var(--c-ease);
+}
+.c-nav a:hover { background: var(--c-belly); }
+.c-nav a[aria-current] { border-left-color: var(--c-ginger); background: var(--c-ginger-soft); color: var(--c-action); font-weight: 600; }
+
+/* 귀 쫑긋: 클릭 가능한 카드의 hover/focus — 윗선만 주황으로 선다. 떠오르는 그림자 없음 */
+.c-card {
+  background: var(--c-surface);
+  border: 1px solid var(--c-whisker);
+  border-radius: var(--c-radius-md);
+  padding: var(--c-space-6);
+  transition: border-color var(--c-paw) var(--c-ease), box-shadow var(--c-paw) var(--c-ease);
+}
+.c-card--ears:hover, .c-card--ears:focus-within {
+  border-color: var(--c-whisker-strong);
+  box-shadow: inset 0 2px 0 var(--c-ginger);
+}
+
+/* ════════════════════════════════════════════════════
+ * 4. 버튼 · 입력 · 포커스
+ * ════════════════════════════════════════════════════ */
+.c-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  min-height: 44px; padding: 9px 18px;
+  border: 1px solid transparent; border-radius: var(--c-radius);
+  font: 600 var(--c-fs-sm)/1.5 var(--c-font); white-space: nowrap; cursor: pointer;
+  transition: background-color var(--c-paw) var(--c-ease), border-color var(--c-paw) var(--c-ease), color var(--c-paw) var(--c-ease);
+}
+.c-btn--primary { background: var(--c-action); color: var(--c-on-action); }
+.c-btn--primary:hover { background: var(--c-action-hover); }
+.c-btn--secondary { background: var(--c-surface); color: var(--c-ink); border-color: var(--c-whisker-strong); }
+.c-btn--secondary:hover { background: var(--c-belly); }
+.c-btn--ghost { background: transparent; color: var(--c-text-2); }
+.c-btn--ghost:hover { background: var(--c-belly); color: var(--c-text); }
+.c-btn--danger { background: var(--c-surface); color: var(--c-danger); border-color: var(--c-danger); }
+/* 차콜 패치 위에서는 주황 채움 버튼 + 차콜 글자 */
+.c-patch .c-btn--primary { background: var(--c-ginger); color: #1E1B19; }
+.c-patch .c-btn--primary:hover { background: var(--c-ginger-on-ink); }
+.c-patch .c-btn--secondary { background: transparent; color: var(--c-on-patch); border-color: #9A938B; }
+.c-btn:disabled { cursor: not-allowed; background: var(--c-belly); border-color: var(--c-whisker); color: var(--c-text-3); }
+
+/* 고양이 눈: 포커스 링은 주황 2px + 4px 간격. 모든 상호작용 요소 공통 */
+:where(.c-btn, .c-card, .c-tabs button, .c-nav a, .c-input):focus-visible {
+  outline: 2px solid var(--c-action); outline-offset: 3px;
+}
+.c-input {
+  width: 100%; min-height: 44px; padding: 10px 12px;
+  border: 1px solid var(--c-whisker-strong); border-radius: var(--c-radius);
+  background: var(--c-surface); color: var(--c-text); font: 400 var(--c-fs-sm) var(--c-font);
+}
+.c-input[aria-invalid="true"] { border-color: var(--c-danger); }
+
+/* ════════════════════════════════════════════════════
+ * 5. 배지 · 젤리 · 상태
+ * ════════════════════════════════════════════════════ */
+.c-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 3px 8px; border-radius: var(--c-radius-sm);
+  font-size: 11px; font-weight: 600; background: var(--c-cream); color: var(--c-text-2);
+}
+.c-badge--ginger { background: var(--c-ginger-soft); color: var(--c-action); }
+.c-badge--ink { background: var(--c-patch-ink); color: var(--c-on-patch); }
+/* 젤리 점: 좋아요·저장·새 알림 같은 '애정' 신호에만. 글자에 쓰지 않는다 */
+.c-bean { width: 8px; height: 8px; border-radius: 50% 50% 45% 45%; background: var(--c-bean); display: inline-block; }
+
+/* ════════════════════════════════════════════════════
+ * 6. 피드백: 골골 토스트 · 조용한 빈 상태
+ * ════════════════════════════════════════════════════ */
+
+/* 골골 토스트: 차콜 면 + 주황 점. 아래에서 8px만 사뿐히 올라온다 */
+.c-toast {
+  position: fixed; left: 50%; bottom: 24px; z-index: 50;
+  display: flex; align-items: center; gap: 10px;
+  max-width: min(480px, calc(100% - 32px));
+  padding: 12px 18px; border-radius: var(--c-radius);
+  background: var(--c-patch-ink); color: var(--c-on-patch); font-size: 13px;
+  transform: translate(-50%, 8px); opacity: 0; pointer-events: none;
+  transition: transform var(--c-stalk) var(--c-ease), opacity var(--c-stalk) var(--c-ease);
+}
+.c-toast::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--c-ginger); flex: none; }
+.c-toast.is-visible { transform: translate(-50%, 0); opacity: 1; pointer-events: auto; }
+.c-toast button { background: none; border: 0; color: var(--c-ginger-on-ink); font: inherit; font-weight: 600; cursor: pointer; }
+
+/* 조용한 빈 상태: 그림 없이 코트 마크 + 한 줄 + 버튼 1개 */
+.c-empty { text-align: center; padding: var(--c-space-12) var(--c-space-6); }
+.c-empty .c-coat-mark { margin-bottom: var(--c-space-4); }
+.c-empty h3 { font-size: var(--c-fs-lg); color: var(--c-ink); margin: 0 0 6px; }
+.c-empty p { font-size: var(--c-fs-sm); color: var(--c-text-2); margin: 0 0 var(--c-space-5); }
+
+/* ════════════════════════════════════════════════════
+ * 7. 움직임 접근성
+ * ════════════════════════════════════════════════════ */
+@media (prefers-reduced-motion: reduce) {
+  .c-tail, .c-toast, .c-card, .c-btn, .c-nav a, .c-tabs button { transition: none !important; }
+}
+

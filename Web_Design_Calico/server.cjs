@@ -2,7 +2,7 @@ const http = require('node:http');
 const fs = require('node:fs');
 const path = require('node:path');
 const types = {'.html':'text/html; charset=utf-8','.css':'text/css; charset=utf-8','.js':'text/javascript; charset=utf-8'};
-const allowed = new Set(['index.html','styles.css','app.js']);
+const allowed = new Set(['index.html','styles.css','app.js','assets/calico.css']);
 http.createServer((req,res)=>{
   const name = new URL(req.url,'http://localhost').pathname.slice(1) || 'index.html';
   if(!allowed.has(name)){res.writeHead(404);res.end('Not found');return;}
